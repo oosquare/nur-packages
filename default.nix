@@ -16,6 +16,7 @@
   modules = import ./modules; # NixOS modules
   overlays = import ./overlays; # nixpkgs overlays
 
+  biliup-rs = pkgs.callPackage ./pkgs/biliup-rs { };
   lx-music-sync-server = pkgs.callPackage ./pkgs/lx-music-sync-server { };
   tickr = pkgs.callPackage ./pkgs/tickr { };
 }
