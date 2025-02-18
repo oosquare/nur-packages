@@ -1,12 +1,13 @@
-{ lib
-, stdenv
-, fetchurl
+{
+  lib,
+  stdenv,
+  fetchurl,
 
-, fribidi
-, gnutls
-, gtk2
-, libxml2
-, pkg-config
+  fribidi,
+  gnutls,
+  gtk2,
+  libxml2,
+  pkg-config,
 }:
 
 stdenv.mkDerivation {

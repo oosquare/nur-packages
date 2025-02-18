@@ -1,83 +1,85 @@
-{ config
-, lib
-, pkgs
-, ...
+{
+  config,
+  lib,
+  pkgs,
+  ...
 }:
 
 let
   cfg = config.services.lx-music-sync-server;
 
-  accountOption = { name, ... }: {
-    options = {
-      name = lib.mkOption {
-        type = lib.types.str;
-        default = name;
-        defaultText = ''
-          config.services.lx-music-sync-server.account.<name>
-        '';
-        description = lib.mdDoc ''
-          Name of a user of the synchronization service. Only alphabets, digits
-          and underscores are allowed.
-        '';
-      };
+  accountOption =
+    { name, ... }:
+    {
+      options = {
+        name = lib.mkOption {
+          type = lib.types.str;
+          default = name;
+          defaultText = ''
+            config.services.lx-music-sync-server.account.<name>
+          '';
+          description = lib.mdDoc ''
+            Name of a user of the synchronization service. Only alphabets, digits
+            and underscores are allowed.
+          '';
+        };
 
-      password = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = ''
-          The corresponding user's password. Warning: it will be world-readable
-          in /nix/store.
-        '';
-      };
+        password = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            The corresponding user's password. Warning: it will be world-readable
+            in /nix/store.
+          '';
+        };
 
-      passwordFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        example = "/run/secrets/lx-music-sync-server-password";
-        description = ''
-          The file from which a user's password is loaded.
-        '';
-      };
+        passwordFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "/run/secrets/lx-music-sync-server-password";
+          description = ''
+            The file from which a user's password is loaded.
+          '';
+        };
 
-      maxSnapshotNum = lib.mkOption {
-        type = lib.types.ints.positive;
-        default = cfg.maxSnapshotNum;
-        defaultText = ''
-          config.services.lx-music-sync-server.maxSnapshotNum
-        '';
-        description = ''
-          The user-specific maximum number of snapshots.
-        '';
-      };
+        maxSnapshotNum = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = cfg.maxSnapshotNum;
+          defaultText = ''
+            config.services.lx-music-sync-server.maxSnapshotNum
+          '';
+          description = ''
+            The user-specific maximum number of snapshots.
+          '';
+        };
 
-      listAddMusicLocation = lib.mkOption {
-        type = lib.types.enum [ "top" "bottom" ];
-        default = cfg.listAddMusicLocation;
-        defaultText = ''
-          config.services.lx-music-sync-server.listAddMusicLocation
-        '';
-        description = ''
-          The user-specific location of a newly added music.
-        '';
+        listAddMusicLocation = lib.mkOption {
+          type = lib.types.enum [
+            "top"
+            "bottom"
+          ];
+          default = cfg.listAddMusicLocation;
+          defaultText = ''
+            config.services.lx-music-sync-server.listAddMusicLocation
+          '';
+          description = ''
+            The user-specific location of a newly added music.
+          '';
+        };
       };
     };
-  };
 
-  logDir = if cfg.logDir == null
-    then "%L/lx-music-sync-server"
-    else cfg.logDir;
+  logDir = if cfg.logDir == null then "%L/lx-music-sync-server" else cfg.logDir;
 
-  dataDir = if cfg.dataDir == null
-    then "%S/lx-music-sync-server"
-    else cfg.dataDir;
-in {
+  dataDir = if cfg.dataDir == null then "%S/lx-music-sync-server" else cfg.dataDir;
+in
+{
   ###### interface
 
   options.services.lx-music-sync-server = {
-    enable = lib.mkEnableOption
-      ("Data synchronization service of LX Music running on Node.js");
+    enable = lib.mkEnableOption ("Data synchronization service of LX Music running on Node.js");
 
-    package = lib.mkPackageOption pkgs "lx-music-sync-server" {};
+    package = lib.mkPackageOption pkgs "lx-music-sync-server" { };
 
     name = lib.mkOption {
       type = lib.types.str;
@@ -161,7 +163,10 @@ in {
     };
 
     listAddMusicLocation = lib.mkOption {
-      type = lib.types.enum [ "top" "bottom" ];
+      type = lib.types.enum [
+        "top"
+        "bottom"
+      ];
       default = "top";
       description = ''
         The location of a newly added music. This option can be overridden by
@@ -171,7 +176,7 @@ in {
 
     accounts = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule accountOption);
-      default = {};
+      default = { };
       example = lib.literalExpression ''
         {
           user1 = {
@@ -192,11 +197,12 @@ in {
   ###### implementation
 
   config = lib.mkIf cfg.enable {
-    warnings = builtins.concatMap
-      (account: lib.optional
-        (account.password != null)
-        "The password of lx-music-sync-server user ${account.name} will be world-readable in /nix/store")
-      (builtins.attrValues cfg.accounts);
+    warnings = builtins.concatMap (
+      account:
+      lib.optional (
+        account.password != null
+      ) "The password of lx-music-sync-server user ${account.name} will be world-readable in /nix/store"
+    ) (builtins.attrValues cfg.accounts);
 
     assertions =
       let
@@ -215,7 +221,7 @@ in {
       description = "lx-music-sync-server service user";
     };
 
-    users.groups.${cfg.group} = {};
+    users.groups.${cfg.group} = { };
 
     systemd.tmpfiles.settings."10-lx-music-sync-server" = {
       ${dataDir}.d = {
@@ -236,35 +242,36 @@ in {
       environment = {
         PORT = builtins.toString cfg.port;
         BIND_IP = cfg.ip;
-        PROXY_HEADER = lib.mkIf cfg.proxy.enable cfg.proxy.header;        
+        PROXY_HEADER = lib.mkIf cfg.proxy.enable cfg.proxy.header;
         LOG_PATH = logDir;
         DATA_PATH = dataDir;
         MAX_SNAPSHOT_NUM = builtins.toString cfg.maxSnapshotNum;
         LIST_ADD_MUSIC_LOCATION_TYPE = cfg.listAddMusicLocation;
       };
 
-      script = let
-        convertAccountConfig = account: {
-          inherit (account) maxSnapshotNum;
-          password = if account.passwordFile != null
-            then ''$(cat ${account.passwordFile})''
-            else account.password;
-          "list.addMusicLocationType" = account.listAddMusicLocation;
-        };
-        buildEnvKeyValue = name: value: {
-          name = "LX_USER_${name}";
-          value = "${(builtins.toJSON (convertAccountConfig value))}";
-        };
-        exportEnvCmd = builtins.concatStringsSep
-          "\n"
-          (builtins.map
-            ({ name, value }: ''export ${name}=${lib.escapeShellArg value}'')
-            (lib.mapAttrsToList buildEnvKeyValue cfg.accounts));
-      in ''
-        ${exportEnvCmd}
+      script =
+        let
+          convertAccountConfig = account: {
+            inherit (account) maxSnapshotNum;
+            password =
+              if account.passwordFile != null then ''$(cat ${account.passwordFile})'' else account.password;
+            "list.addMusicLocationType" = account.listAddMusicLocation;
+          };
+          buildEnvKeyValue = name: value: {
+            name = "LX_USER_${name}";
+            value = "${(builtins.toJSON (convertAccountConfig value))}";
+          };
+          exportEnvCmd = builtins.concatStringsSep "\n" (
+            builtins.map ({ name, value }: ''export ${name}=${lib.escapeShellArg value}'') (
+              lib.mapAttrsToList buildEnvKeyValue cfg.accounts
+            )
+          );
+        in
+        ''
+          ${exportEnvCmd}
 
-        ${cfg.package}/bin/lx-music-sync-server
-      '';
+          ${cfg.package}/bin/lx-music-sync-server
+        '';
 
       serviceConfig = {
         Type = "simple";

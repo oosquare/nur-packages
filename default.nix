@@ -6,7 +6,9 @@
 # commands such as:
 #     nix-build -A mypackage
 
-{ pkgs ? import <nixpkgs> {} }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 
 {
   # The `lib`, `modules`, and `overlays` names are special
@@ -14,6 +16,6 @@
   modules = import ./modules; # NixOS modules
   overlays = import ./overlays; # nixpkgs overlays
 
-  lx-music-sync-server = pkgs.callPackage ./pkgs/lx-music-sync-server {};
-  tickr = pkgs.callPackage ./pkgs/tickr {};
+  lx-music-sync-server = pkgs.callPackage ./pkgs/lx-music-sync-server { };
+  tickr = pkgs.callPackage ./pkgs/tickr { };
 }
